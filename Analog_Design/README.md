@@ -2,7 +2,7 @@
 
 This directory contains the analog circuit design assignments and mini-project completed during the **Internship on VLSI Design Covering Analog and Digital Design Flow**, organized by NIT and NIELIT Calicut.
 
-The work focuses on CMOS circuit design, transistor characterization, amplifier design, operational amplifiers, and analog circuit analysis using **Cadence Virtuoso 6.17**.
+The work focuses on CMOS circuit design, transistor characterization, amplifier design, operational amplifiers, and analog circuit analysis using **Cadence Virtuoso**.
 
 ## Contents
 
@@ -17,7 +17,7 @@ The work focuses on CMOS circuit design, transistor characterization, amplifier 
 
 ## Tools and Technologies
 
-- **Cadence Virtuoso 6.17** – Schematic design and circuit simulation
+- **Cadence Virtuoso** – Schematic design and circuit simulation
 - **LTspice** – Analog circuit simulation and analysis
 - **CMOS Technology** – NMOS and PMOS transistor-based circuit design
 
