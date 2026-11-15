@@ -407,8 +407,3 @@ The design performance is summarized below.
 
 
 
-## Project Report
-
-The complete submitted project report is included in this file:
-
-[Two-Stage CMOS Op-Amp Project Report](Two_Stage_CMOS_OpAmp_Project_Report.pdf)
