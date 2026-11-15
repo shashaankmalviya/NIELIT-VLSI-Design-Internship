@@ -2,101 +2,174 @@
 
 ## Overview
 
-The Automatic Railway Level Crossing Controller is an FSM-based digital controller that manages railway crossing operations using train approach, train departure, and gate-position inputs. It generates gate commands, warning indication, and road traffic signals. The design also detects selected invalid sensor combinations and enters a fault state.
+The Automatic Railway Level Crossing Controller is an FSM-based digital control system designed to manage railway crossing operations. It monitors train approach and departure signals along with gate-position feedback to coordinate gate operation, warning indications, and road traffic signals.
 
-The project covers Verilog RTL design, functional simulation, waveform analysis, code coverage, timing constraints, and logic synthesis.
+The controller implements six operating states and incorporates a warning counter and fault-detection logic to handle selected invalid sensor combinations. The project covers Verilog RTL design, functional simulation, waveform analysis, code coverage, timing constraints, and logic synthesis.
 
 ## Objectives
 
-- Design a finite-state-machine-based railway crossing controller.
-- Implement the controller using Verilog RTL.
-- Coordinate gate commands, warning indication, and road traffic signals.
-- Detect selected invalid gate-sensor combinations.
-- Verify normal and fault operation using Synopsys VCS and GTKWave.
-- Evaluate code coverage using VCS.
+- Design a finite-state-machine-based railway level crossing controller.
+- Implement the controller using Verilog HDL.
+- Coordinate railway gate operation, warning indications, and road traffic signals.
+- Detect selected invalid gate-sensor combinations and handle fault conditions.
+- Verify normal and fault operation using Synopsys VCS.
+- Analyze simulation waveforms using GTKWave.
+- Evaluate code coverage using line, toggle, condition, branch, and FSM metrics.
 - Synthesize the RTL using Synopsys Design Compiler and analyze the generated reports.
-
 
 ## Input and Output Signals
 
 | Signal | Direction | Function |
 |---|---|---|
-| `clk` | Input | Synchronizes state transitions |
-| `rst` | Input | Resets the FSM |
+| `clk` | Input | Synchronizes FSM state transitions |
+| `rst` | Input | Resets the controller |
 | `train_approach` | Input | Indicates an approaching train |
 | `train_departed` | Input | Indicates train departure |
-| `gate_open` | Input | Gate-open feedback |
-| `gate_closed` | Input | Gate-closed feedback |
+| `gate_open` | Input | Gate-open position feedback |
+| `gate_closed` | Input | Gate-closed position feedback |
 | `gate_open_cmd` | Output | Requests gate opening |
 | `gate_close_cmd` | Output | Requests gate closing |
-| `warning` | Output | Warning indication |
+| `warning` | Output | Activates the warning indication |
 | `road_red` | Output | Stops road traffic |
-| `road_green` | Output | Permits road traffic in the normal state |
+| `road_green` | Output | Permits road traffic |
 
 ## FSM Design
 
-The controller uses six states:
+The controller uses a six-state finite state machine.
 
 | State | Encoding | Description |
 |---|---|---|
-| `IDLE` | `000` | Normal state, gate open |
-| `WARNING_ST` | `001` | Warning interval before closing |
+| `IDLE` | `000` | Normal operating state with the gate open |
+| `WARNING_ST` | `001` | Warning interval before gate closing |
 | `CLOSING` | `010` | Gate closing sequence |
-| `TRAIN_PASS` | `011` | Train passage |
+| `TRAIN_PASS` | `011` | Train passage through the crossing |
 | `OPENING` | `100` | Gate opening sequence |
-| `FAULT` | `101` | Fault state |
+| `FAULT` | `101` | Fault state for selected invalid sensor conditions |
 
-After reset, the FSM enters `IDLE`, where the gate-open command is active and road traffic is permitted. When a train approaches, the controller enters `WARNING_ST`, activates the warning indication, and changes the road signal to red.
+### State Operation
 
-After the warning counter reaches its configured threshold, the FSM enters `CLOSING`. When gate-closed feedback is received, it moves to `TRAIN_PASS`. When the train-departure input is asserted, the controller enters `OPENING`. Once gate-open feedback is received, it returns to `IDLE`.
+1. **IDLE:** After reset, the controller enters the normal state. The gate-open command is active and road traffic is permitted.
+2. **WARNING_ST:** When a train approaches, the controller activates the warning indication and changes the road signal to red. A counter controls the warning interval.
+3. **CLOSING:** After the warning interval, the controller requests gate closure and waits for gate-closed feedback.
+4. **TRAIN_PASS:** Once the gate is confirmed closed, the controller remains in this state while the train passes.
+5. **OPENING:** When train departure is detected, the controller requests gate opening.
+6. **FAULT:** Selected invalid gate-sensor combinations cause the controller to enter the fault state. The fault state is retained until reset, with gate-close, warning, and road-red indications active.
 
-The design enters `FAULT` for selected invalid input combinations. In the RTL, this state is retained until reset. The controller requests gate closure and keeps warning and road-red indications active in this state.
+After gate-open feedback is received during the opening sequence, the controller returns to `IDLE`.
 
 ## Verification
 
-The testbench generates a 10 ns clock and applies the following scenarios:
+The design is verified using a Verilog testbench that generates a 10 ns clock and applies different operating scenarios.
 
-1. Reset and initial signal values.
-2. Train approach.
-3. Warning interval.
-4. Gate fully closes.
-5. Train passage.
-6. Train departure.
+The verification scenarios include:
+
+1. Reset and initial signal conditions.
+2. Train approach detection.
+3. Warning interval operation.
+4. Gate closing sequence.
+5. Confirmation of gate-closed feedback.
+6. Train passage and departure.
 7. Gate opening and return to `IDLE`.
-8. Invalid gate-sensor combination.
+8. Invalid gate-sensor combinations and fault-state operation.
 
-The project uses Synopsys VCS for simulation and GTKWave for waveform analysis. The full simulation commands and project details are available in `Mini_Project_Report.pdf`.
+Synopsys VCS is used for RTL simulation, while GTKWave is used to inspect the generated waveforms.
+
+### Running a Simulation
+
+The following commands can be used from the project root directory with Icarus Verilog:
+
+```bash
+iverilog -o railway_controller_sim src/railway_controller.v tb/tb_railway.v
+vvp railway_controller_sim
+```
+
+To inspect the waveform, ensure that the testbench contains the appropriate `$dumpfile` and `$dumpvars` statements. Open the generated VCD file using:
+
+```bash
+gtkwave railway_controller.vcd
+```
+
+### VCS-Based Simulation
+
+```bash
+vcs -o railway_controller_sim src/railway_controller.v tb/tb_railway.v
+./railway_controller_sim
+```
+
+The waveform filename and location depend on the `$dumpfile` statement in the testbench.
 
 ## Coverage Analysis
 
-Coverage is collected using VCS with line, toggle, branch, condition, and FSM metrics.
+Code coverage is collected using Synopsys VCS with line, toggle, branch, condition, and FSM coverage metrics.
 
-| Metric | Coverage achieved |
+| Coverage Metric | Coverage Achieved |
 |---|---:|
-| Line coverage | 89.32% |
-| Toggle coverage | 80.56% |
-| Condition coverage | 63.64% |
-| Branch coverage | 75.86% |
-| FSM coverage | 42.86% |
+| Line Coverage | 89.32% |
+| Toggle Coverage | 80.56% |
+| Condition Coverage | 63.64% |
+| Branch Coverage | 75.86% |
+| FSM Coverage | 42.86% |
 
-## Logic Synthesis
+The coverage analysis evaluates the execution of the controller's RTL statements, signal transitions, decision conditions, branches, and FSM states.
 
-The RTL is synthesized using Synopsys Design Compiler with the SAED32 standard-cell library. The synthesis flow applies the SDC timing constraints, checks the design, and runs `compile_ultra`.
+The verification scenarios exercise reset, train arrival, warning generation, gate closing, train passage, train departure, gate opening, and fault handling.
 
-The flow generates quality-of-results, area, timing, and power reports, along with a technology-mapped Verilog netlist, output SDC, and DDC backup.
+### VCS Coverage Commands
 
-The timing constraints define a 10 ns clock period, 1.0 ns input delays, 1.0 ns output delays, and a false path from the asynchronous reset. The Design Compiler script uses machine-specific paths from the development environment; update those paths before running it on another system.
+```bash
+vcs -cm line+tgl+branch+cond+fsm \
+    -o railway_controller_cov \
+    src/railway_controller.v tb/tb_railway.v
+
+./railway_controller_cov -cm line+tgl+branch+cond+fsm
+
+urg -dir railway_controller_cov.vdb -report coverage_report
+```
+
+The coverage database and generated reports are produced by VCS and URG.
+
+## Synthesis Constraints
+
+The design uses Synopsys Design Compiler with the SAED32 standard-cell library for logic synthesis.
+
+The timing constraints define:
+
+- Clock period: 10 ns
+- Input delay: 1.0 ns
+- Output delay: 1.0 ns
+- Reset: Excluded from normal timing analysis using a false-path constraint
+
+The SDC constraints define the timing relationship between the controller and its external input and output signals.
+
+## Design Compiler Synthesis
+
+The synthesis flow uses Synopsys Design Compiler to read and elaborate the RTL, link the required technology libraries, apply timing constraints, check the design, and execute `compile_ultra`.
+
+The synthesis analysis includes:
+
+- Quality-of-results report
+- Cell area report
+- Timing report
+- Power report
+- Technology-mapped Verilog netlist
+- Output SDC
+- DDC design database
+
+The synthesis flow uses library and script paths specific to the development environment. These paths must be updated when reproducing the synthesis flow on another system.
 
 ## Conclusion
 
-The Automatic Railway Level Crossing Controller demonstrates an RTL-to-synthesis workflow for an FSM-based digital control system. The design coordinates train detection, gate operation, warning indication, and road traffic signals, while incorporating a warning counter and fault-detection logic.
+The Automatic Railway Level Crossing Controller demonstrates the design and verification of an FSM-based digital control system using Verilog HDL.
 
-Functional verification was performed using Synopsys VCS, and waveforms were analyzed using GTKWave. Coverage analysis evaluated line, toggle, condition, branch, and FSM coverage. The RTL was subsequently synthesized using Synopsys Design Compiler.
+The controller coordinates train detection, railway gate operation, warning indications, and road traffic signals while incorporating a warning counter and fault-detection logic.
 
-## Tools
+Functional verification was performed using Synopsys VCS, and simulation waveforms were analyzed using GTKWave. Code coverage was evaluated using line, toggle, condition, branch, and FSM metrics. The RTL was subsequently synthesized using Synopsys Design Compiler with the SAED32 standard-cell library.
+
+## Tools and Technologies
 
 - Verilog HDL
 - Synopsys VCS
 - GTKWave
 - Synopsys Design Compiler
-- SAED32 standard-cell library
+- SAED32 Standard-Cell Library
+- Icarus Verilog
